@@ -1,13 +1,22 @@
-from threading import Timer
-from logging import basicConfig, DEBUG
+from logging import basicConfig, DEBUG, info, error
 from pandas import DataFrame, read_csv
 from psutil import Process, process_iter
 from win32process import GetWindowThreadProcessId
 from win32gui import GetForegroundWindow
 from os.path import dirname, realpath
 from os import startfile
+from time import sleep
+import sys
 
-PATH = dirname(realpath(__file__)) + "\\"
+def err(msg):
+    error(msg) 
+    assert(msg)
+
+def log(msg):
+    info(msg)
+
+PATH = (dirname(sys.executable) if getattr(sys, "frozen", False) else dirname(realpath(__file__))) + "\\"
+
 PATH_CSV = PATH + "programs.csv"
 PATH_LOG = PATH + "log.log"
 OBS_PROCNAME = "obs64.exe"
@@ -15,7 +24,7 @@ OBS64_PATH = r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\OBS Studio\o
 programs = DataFrame(data={"window_name": [], "folder_name": [], "is_game": []})
 game_running = ""
 
-basicConfig(filename=(PATH_LOG), level=DEBUG, format='%(asctime)s: %(message)s')
+basicConfig(filename=(PATH_LOG), level=DEBUG, format='%(asctime)s: obs - %(message)s ')
 
 def write_csv():
     global programs
@@ -33,50 +42,61 @@ def get_process(name): return [ process for process in process_iter() if process
 
 def process_active(proc_name): return len(get_process(proc_name)) > 0
 
+def run_obs(): 
+    log("run_obs()")
+    if not process_active(OBS_PROCNAME): startfile(OBS64_PATH)
+
 def kill_obs():
+    log("kill_obs()")
     if process_active(OBS_PROCNAME):
         for process in get_process(OBS_PROCNAME): process.kill()
 
-def run_obs(): 
-    if process_active(OBS_PROCNAME): startfile(OBS64_PATH)
-
 def get_active_window_name():
-    pid = GetWindowThreadProcessId(GetForegroundWindow())
-    return Process(pid[-1]).name()
+    window_name = ""
+    timer = 60 # seconds
+    while (len(window_name) == 0) and (timer >= 0):
+        pid = GetWindowThreadProcessId(GetForegroundWindow())
+        try: window_name = Process(pid[-1]).name()
+        except ValueError: 
+            err("get_active_window_name no Process found. Try again. Timer: " + timer)
+            sleep(5)
+            timer -= 5
+    if timer <= 0: err("Time out: get_active_window_name. No Process found")   
+    return window_name
 
 def get_program_by_window_name(window_name):
     return programs.loc[programs.window_name == window_name]
 
 def stop_obs():
+    log("stop_obs()")
     global game_running
-
-    if not process_active(game_running): kill_obs()
-    else: Timer(10, stop_obs).start()
-        
+    while process_active(game_running): sleep(10)
+    kill_obs()
+    game_running = ""
 
 def start_obs():
-    global programs, game_running
-    active_window = get_active_window_name()
-    program = get_program_by_window_name(active_window)
-
-    try: 
-        #program_window_name = program.get("window_name").values.tolist()[0] == 1
-        #program_folder_name = program.get("folder_name").values.tolist()[0] == 1
-        program_is_game = program.get("is_game").values.tolist()[0] == 1
-    except IndexError:
-        get_data()
-        programs = programs.append({
-            "window_name": active_window,
-            "folder_name": active_window.split(".")[0],
-            "is_game": 0
-        }, ignore_index=True)
-        write_csv()
-    else:
-        if program_is_game and len(game_running) != 0:
-            run_obs()
-            game_running = active_window
-            stop_obs()
-        
-    Timer(10, start_obs).start()
+    log("start_obs()")
+    while True:
+        global programs, game_running
+        active_window = get_active_window_name()
+        program = get_program_by_window_name(active_window)
+        try: 
+            #program_window_name = program.get("window_name").values.tolist()[0] == 1
+            #program_folder_name = program.get("folder_name").values.tolist()[0] == 1
+            program_is_game = program.get("is_game").values.tolist()[0] == 1
+        except IndexError:
+            get_data()
+            programs = programs.append({
+                "window_name": active_window,
+                "folder_name": active_window.split(".")[0],
+                "is_game": 0
+            }, ignore_index=True)
+            write_csv()
+        else:
+            if program_is_game and len(game_running) == 0:
+                run_obs()
+                game_running = active_window
+                stop_obs()
+        sleep(10)
 
 start_obs()
