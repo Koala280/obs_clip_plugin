@@ -66,17 +66,17 @@ class SoundNotActivatedError(Exception):
         self.active_window = active_window
 
     def __str__(self):
-        if self.message:
-            return "Couldn't activate Sound for game: {active_game} ; active window: {active_window}".format(active_game=self.active_game, active_window=self.active_window)
-        else:
-            return "Couldn't activate Sound"
+        log(self.message)
+        if self.message: return "Couldn't activate Sound for game: {active_game} ; active window: {active_window}".format(active_game=self.active_game, active_window=self.active_window)
+        else: return "Couldn't activate Sound"
 
 programs = DataFrame(data={"window_name": [], "folder_name": [], "is_game": []})
 active_window = ""
 enabled = True
-debug = True
+debug = False
 videos_path = str(Path.home()) + "\Videos\\"
 clip_path = videos_path + "Clips\\"
+active_game = ""
 
 def err(msg):
     error(msg) 
@@ -94,16 +94,7 @@ PATH_LOG = PATH + "log.log"
 
 MISSING_FOLDER_NAME = "None"
 
-if not exists(Path.home()): raise Exception('Home path "' + str(Path.home()) + '" doesn\'t exist')
-elif not isdir(Path.home()): raise IsDirError('Home path "' + str(Path.home()) + '" is not a dir')
-
-if not exists(videos_path): mkdir(videos_path)
-elif not isdir(videos_path): raise IsDirError(videos_path)
-
-if not exists(clip_path): mkdir(clip_path)
-elif not isdir(clip_path): raise IsDirError(clip_path)
-
-basicConfig(filename=(PATH_LOG), level=DEBUG, format='%(asctime)s: %(message)s')
+basicConfig(filename=(PATH_LOG), level=DEBUG, format='%(asctime)s: obs_clip - %(message)s ')
 
 def write_csv():
     log("write_csv()")
@@ -148,7 +139,7 @@ def press_key(key):
 
 def get_active_window():
     log("get_active_window()")
-    global enabled, programs, active_window
+    global enabled, programs, active_window, active_game
     active_game = ""
 
     while enabled:
@@ -174,8 +165,6 @@ def get_active_window():
 
 def create_folder(folder_name):
     log("create_folder()")
-    log("folder_name: " + str(folder_name) + " type: " + str(type(folder_name)))
-    log("clip_path: " + str(clip_path) + " type: " + str(type(clip_path)))
     if not exists(clip_path + folder_name): mkdir(clip_path + folder_name)
     elif not isdir(clip_path + folder_name): raise IsDirError(clip_path + folder_name)
 
@@ -186,8 +175,9 @@ def get_files_in_folder(path):
 def sort_folder():
     log("sort_folder()")
     files = get_files_in_folder(clip_path)
-    if len(files) != 0: create_folder(MISSING_FOLDER_NAME)
-    for f in files: rename(clip_path + f, clip_path + MISSING_FOLDER_NAME + "\\" + f)
+    if len(files) != 0:
+        create_folder(MISSING_FOLDER_NAME)
+        for f in files: rename(clip_path + f, clip_path + MISSING_FOLDER_NAME + "\\" + f)
 
 def get_clip_name():
     log("get_clip_name()")
@@ -199,15 +189,15 @@ def get_clip_name():
 
 def save_replay():
     log("save_replay()")
+    sort_folder()
     if not obs.obs_frontend_replay_buffer_active(): err("replay buffer not active")
     else:
         obs.obs_frontend_replay_buffer_save()
-        sort_folder()
-        global active_window, programs
+        global programs, active_game
         
         try:
-            f = get_program_by_window_name(active_window)
-            folder_name = f.folder_name[0]
+            f = get_program_by_window_name(active_window) if active_window != 0 else get_program_by_window_name(active_window)
+            folder_name = f.get("folder_name").values.tolist()[0]
         except IndexError:
             err("Index Error for window: " + active_window)
             folder_name = MISSING_FOLDER_NAME
@@ -224,7 +214,7 @@ def save_replay():
 def cb_hk_save_replay(pressed):
     log("cb_hk_save_replay: " + str(pressed))
     if pressed:
-        save_replay()    
+        save_replay()
 
 def cb_get_data(props, prop):
     log("cb_get_data")
@@ -258,6 +248,15 @@ def script_defaults(settings):
     obs.obs_data_set_default_bool(settings, "enabled", enabled)
     obs.obs_data_set_default_bool(settings, "debug", debug)
     obs.obs_data_set_default_string(settings, "clip_path", clip_path)
+    
+    if not exists(Path.home()): raise Exception('Home path "' + str(Path.home()) + '" doesn\'t exist')
+    elif not isdir(Path.home()): raise IsDirError('Home path "' + str(Path.home()) + '" is not a dir')
+
+    if not exists(videos_path): mkdir(videos_path)
+    elif not isdir(videos_path): raise IsDirError(videos_path)
+
+    if not exists(clip_path): mkdir(clip_path)
+    elif not isdir(clip_path): raise IsDirError(clip_path)
     log(
 f"""
 Enabled: {obs.obs_data_get_bool(settings, 'enabled')}

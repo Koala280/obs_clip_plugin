@@ -1,0 +1,13 @@
+
+*.spec
+*.log
+*.csv
+*.html
+*.txt
+*.toc
+*.pyz
+*.pkg
+*.manifest
+*.zip
+*.bat
+*.pyc
