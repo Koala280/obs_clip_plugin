@@ -79,7 +79,7 @@ clip_path = videos_path + "Clips\\"
 active_game = ""
 
 def err(msg):
-    error(msg) 
+    error(msg)
     assert(msg)
 
 def log(msg):
@@ -94,7 +94,7 @@ PATH_LOG = PATH + "log.log"
 
 MISSING_FOLDER_NAME = "None"
 
-basicConfig(filename=(PATH_LOG), level=DEBUG, format='%(asctime)s: obs_clip - %(message)s ')
+basicConfig(filename=(PATH_LOG), level=DEBUG, format='%(asctime)s:%(levelname)s: obs_clip - %(message)s')
 
 def write_csv():
     log("write_csv()")
@@ -115,6 +115,7 @@ def get_active_window_name():
 
 def activate_sound(active_game):
     log("activate_sound()")
+    log(f"active_game: { active_game }")
     global active_window
     counter = 0
     # wait for the game being foreground
@@ -125,6 +126,7 @@ def activate_sound(active_game):
         if counter == 10 * 60: 
             raise SoundNotActivatedError(active_game, active_window)
     # activate sound for game
+    log(f"Sound activated for: { active_window }")
     press_key(Key.f9)
 
 def get_program_by_window_name(window_name):
@@ -148,6 +150,7 @@ def get_active_window():
 
         try: program_is_game = program.get("is_game").values.tolist()[0] == 1
         except IndexError:
+            log("IndexError in get_active_window()")
             get_data()
             programs = programs.append({
                 "window_name": active_window,
@@ -159,9 +162,11 @@ def get_active_window():
             if program_is_game and (active_game != active_window):
                 # if active window is a game and if the game isn't already activated
                 active_game = active_window
+                
                 Timer(30, activate_sound(active_game))
             
         sleep(10)
+    log(f"stop get_active_window() active_window({active_window}) active_game({active_game})")
 
 def create_folder(folder_name):
     log("create_folder()")

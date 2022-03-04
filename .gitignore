@@ -10,3 +10,8 @@ build/obs/xref-obs.html
 build/obs/PYZ-00.pyz
 build/obs/obs.pkg
 __pycache__/obs.cpython-36.pyc
+*.log
+*.bat
+__pycache__/obs_clip.cpython-36.pyc
+test.ipynb
+test_tkinter.ipynb
