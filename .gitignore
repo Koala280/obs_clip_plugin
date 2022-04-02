@@ -6,15 +6,9 @@
 *.toc
 *.pyc
 *.log
-programs.csv
-build/obs/warn-obs.txt
-build/obs/xref-obs.html
-build/obs/PYZ-00.pyz
-build/obs/obs.pkg
-test.ipynb
-test_tkinter.ipynb
-obs.exe
+*.csv
 *.html
 *.txt
 *.pyz
 *.pkg
+*.ipynb
