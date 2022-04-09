@@ -68,8 +68,8 @@ class Config():
         self.get_programs_from_csv()
         program = [item for item in self.programs if item[WINDOW_NAME] == window_name]
         if (len(window_name) != 0) and (len(program) == 0): self.add_program(window_name)
-        return [item for item in self.programs if item[WINDOW_NAME] == window_name][0]
-
+        program = [item for item in self.programs if item[WINDOW_NAME] == window_name][0]
+        return program
     
     def window_name_in_programs(self, window_name: str) -> bool: return len(self.get_program_by_window_name(window_name)) != 0
     
