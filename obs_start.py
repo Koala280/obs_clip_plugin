@@ -62,6 +62,5 @@ def start_obs() -> None:
                 stop_obs()
         sleep(10)
 
-
 start_obs()
 # %%

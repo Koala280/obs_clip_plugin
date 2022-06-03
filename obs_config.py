@@ -11,7 +11,7 @@ from csv import reader, writer
 PATH: str = (dirname(sys.executable) if getattr(sys, "frozen", False) else dirname(realpath(__file__))) + "\\"
 PATH_CSV: str = PATH + "programs.csv"
 PATH_LOG: str = PATH + "obs_log.log"
-PATH_NOTIFICATION = r"D:\development\Python\obs_clip_plugin\obs_notification_controller.exe"
+PATH_NOTIFICATION = PATH + "obs_notification_controller.exe"
 
 WINDOW_NAME: int = 0
 FOLDER_NAME: int = 1
@@ -28,6 +28,7 @@ class Config():
     def get_is_game_by_window_name(self, window_name: str) -> bool: return self.get_program_is_game(self.get_program_by_window_name(window_name))
     def get_active_program_folder_name(self) -> str: return self.get_program_folder_name(self.get_active_program())
     def get_active_program_is_game(self) -> bool: return self.get_program_is_game(self.get_active_program())
+    def program_exists(self, window_name: str) -> bool: return len([item for item in self.programs if item[WINDOW_NAME] == window_name]) == 0
 
     def __init__(self, script_name: str):
         basicConfig(filename=(PATH_LOG), level=DEBUG, format='%(asctime)s:%(levelname)s: {} - %(message)s'.format(script_name))
@@ -60,16 +61,15 @@ class Config():
 
     def get_active_window_name(self) -> str:
         try: return Process(GetWindowThreadProcessId(GetForegroundWindow())[-1]).name()
-        except ValueError:
-            self.error("get_active_window_name no Process found.")
+        except:
+            #self.error("get_active_window_name no Process found.")
             return ""
 
     def get_program_by_window_name(self, window_name: str) -> tuple:
+        if window_name == "": error("window_name empty")
         self.get_programs_from_csv()
-        program = [item for item in self.programs if item[WINDOW_NAME] == window_name]
-        if (len(window_name) != 0) and (len(program) == 0): self.add_program(window_name)
-        program = [item for item in self.programs if item[WINDOW_NAME] == window_name][0]
-        return program
+        if self.program_exists(window_name): self.add_program(window_name)
+        return [item for item in self.programs if item[WINDOW_NAME] == window_name][0]
     
     def window_name_in_programs(self, window_name: str) -> bool: return len(self.get_program_by_window_name(window_name)) != 0
     
