@@ -12,3 +12,4 @@
 *.pyz
 *.pkg
 *.ipynb
+!requirements.txt
