@@ -4,7 +4,6 @@ import sys
 from psutil import Process
 from win32process import GetWindowThreadProcessId
 from win32gui import GetForegroundWindow
-from obs_notification_controller import *
 import subprocess
 from csv import reader, writer
 
@@ -20,6 +19,7 @@ IS_GAME: int = 2
 class Config():
 
     programs: list = list()
+    active_game_name: str = ""
 
     def get_program_window_name(self, program: tuple) -> str: return program[WINDOW_NAME]
     def get_program_folder_name(self, program: tuple) -> str: return program[FOLDER_NAME]
@@ -62,7 +62,7 @@ class Config():
     def get_active_window_name(self) -> str:
         try: return Process(GetWindowThreadProcessId(GetForegroundWindow())[-1]).name()
         except:
-            #self.error("get_active_window_name no Process found.")
+            self.error("get_active_window_name no Process found.")
             return ""
 
     def get_program_by_window_name(self, window_name: str) -> tuple:

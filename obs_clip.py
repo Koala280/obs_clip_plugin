@@ -101,7 +101,7 @@ def save_replay() -> None:
 
         while True:
             try: rename(clip_path + clip_name, clip_path + folder_name + "\\" + clip_name)
-            except PermissionError: sleep(1)
+            except PermissionError: sleep(0.1)
             else: break
 
         c.info(f"New clip in: { folder_name }")
@@ -119,7 +119,7 @@ def cb_save_replay(props, prop) -> None:
     save_replay()
 
 #def cb_test(props, prop) -> None:
-#    c.notification("TESTTT")
+#    # c.notification("TESTTT")
 
 # API
 def script_load(settings) -> None:
@@ -167,8 +167,8 @@ def script_update(settings) -> None:
 
     global enabled, debug, clip_path
 
-    if debug and not obs.obs_data_get_bool(settings, "debug"): print("Debug stop")
-    elif not debug and obs.obs_data_get_bool(settings, "debug"): print("Debug start")
+    if debug and not obs.obs_data_get_bool(settings, "debug"): log("Debug stop")
+    elif not debug and obs.obs_data_get_bool(settings, "debug"): log("Debug start")
 
     debug = obs.obs_data_get_bool(settings, "debug")
     enabled = obs.obs_data_get_bool(settings, "enabled")
