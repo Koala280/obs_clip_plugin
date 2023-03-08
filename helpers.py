@@ -61,37 +61,44 @@ def csv_save(programs: list) -> None:
     with open(PATH_PROGRAMS_CSV, "w", newline='') as f:
         w = csv.writer(f)
         w.writerow(['process', 'folder', "is_game"])
-        w.writerows(map(lambda x: [x.process, x.folder, int(x.is_game)], programs))
+        w.writerows(
+            map(lambda x: [x.process, x.folder, int(x.is_game)], programs))
 
 
 def csv_load() -> list:
     log("csv_load()")
     try:
-        with open(PATH_PROGRAMS_CSV, "r", newline='') as f: #TODO SWITCH TO a instead of r
+        with open(PATH_PROGRAMS_CSV, "r", newline='') as f:  # TODO SWITCH TO a instead of r
             r = csv.reader(f)
             next(r)
             programs = []
             for row in r:
                 if row[PROCESS] != []:
-                    programs.append(Program(row[PROCESS], row[FOLDER], row[IS_GAME]))
+                    programs.append(
+                        Program(row[PROCESS], row[FOLDER], row[IS_GAME]))
             return programs
     except FileNotFoundError:
         csv_save([])
         return csv_load()
 
-    
+
 def set_active_game_folder_name(folder_name: str) -> None:
     log("set_active_game_folder_name()")
     with open(PATH_GAME_CSV, "w") as f:
         w = csv.writer(f)
-        w.writerow(folder_name)
-    
+        w.writerow([folder_name])
+
+
 def get_active_game_folder_name() -> str:
     log("get_active_game_folder_name()")
-    with open(PATH_GAME_CSV, "r") as f:
-        r = csv.reader(f)
-        return next(r)
-            
+    try:
+        with open(PATH_GAME_CSV, "r") as f:
+            r = csv.reader(f)
+            return next(r)[0]
+    except FileNotFoundError:
+        set_active_game_folder_name("")
+        return get_active_game_folder_name()
+
 
 """ Program Helpers """
 
@@ -110,6 +117,7 @@ def new_program(new_program_name: str, programs: list) -> None:
     programs.append(
         Program(new_program_name, new_program_name.split(".")[0], 0))
     return programs
+
 
 """ Notification """
 def notification(msg: str) -> None: subprocess.run([PATH_NOTIFICATION, msg])

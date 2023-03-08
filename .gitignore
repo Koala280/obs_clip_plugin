@@ -1,12 +1,12 @@
-
-*.bat
+__pycache__/
+build/
+dist/
 *.manifest
 *.zip
 *.spec
 *.toc
 *.pyc
 *.log
-*.csv
 *.html
 *.txt
 *.pyz

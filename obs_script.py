@@ -85,17 +85,17 @@ def update_active_program() -> None:
         sleep(10)
 
 
-
-
 def handle_active_program_updated_event():
     global active_game
 
     if (active_game == None) and (active_program.is_game):
         active_game = active_program
+        event.post(EVENT_ACTIVE_GAME_UPDATED)
         h.log(f"{active_program.process} running. Start OBS")
         start_obs()
     elif (active_game != None) and (not process_active(active_game.process)):
         active_game = None
+        event.post(EVENT_ACTIVE_GAME_UPDATED)
         stop_obs()
 
 

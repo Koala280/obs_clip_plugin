@@ -1,5 +1,5 @@
-numpy==1.23.4
-pandas==1.5.1
-psutil==5.9.3
-pyside6==6.4.0.1
-pywin32==304
+numpy
+pandas
+psutil
+pyside6-essentials
+pywin32
