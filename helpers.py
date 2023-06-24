@@ -3,6 +3,10 @@ from os.path import dirname, realpath
 from logging import error, basicConfig, DEBUG, info
 import csv
 import subprocess
+from win32process import GetWindowThreadProcessId
+from win32gui import GetForegroundWindow
+from psutil import Process, process_iter, NoSuchProcess
+import pygetwindow as gw
 
 PATH: str = (dirname(sys.executable) if getattr(
     sys, "frozen", False) else dirname(realpath(__file__))) + "\\"
@@ -49,6 +53,30 @@ class Program:
         self.folder = folder
         self.is_game = bool(int(is_game))
 
+""" Process """
+def get_process(name: str) -> list:
+    process: list = []
+    for proc in process_iter():
+        try:
+            if proc.name() == name:
+                process.append(proc)
+        except NoSuchProcess:
+            pass
+
+    return process
+
+def get_active_process():
+    log("get_active_process()")
+    try:
+        active_process = Process(GetWindowThreadProcessId(
+            GetForegroundWindow())[-1]).name()
+    except:
+        err("get_active_window_name no Process found.")
+        active_process = None
+    return active_process
+
+def process_active(
+    proc_name: str) -> bool: return len(get_process(proc_name)) > 0
 
 """ CSV """
 

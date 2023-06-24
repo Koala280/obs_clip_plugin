@@ -1,4 +1,4 @@
-import helpers as h
+import helpers as helpers
 
 subscribers = dict()
 
@@ -9,7 +9,7 @@ def subscribe(event_type: str, fn):
 
 def post(event_type: str):
     if not event_type in subscribers:
-        h.err(f"Event Type {event_type} not existing!")
+        helpers.err(f"Event Type {event_type} not existing!")
         return
     for fn in subscribers[event_type]:
         fn()

@@ -1,5 +1,6 @@
 numpy
 pandas
 psutil
-pyside6-essentials
+pyside6
 pywin32
+pygetwindow
