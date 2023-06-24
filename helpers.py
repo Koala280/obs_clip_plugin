@@ -6,7 +6,6 @@ import subprocess
 from win32process import GetWindowThreadProcessId
 from win32gui import GetForegroundWindow
 from psutil import Process, process_iter, NoSuchProcess
-import pygetwindow as gw
 
 PATH: str = (dirname(sys.executable) if getattr(
     sys, "frozen", False) else dirname(realpath(__file__))) + "\\"
@@ -44,7 +43,6 @@ process: name of process (mostly just name of executable)
 folder: name of folder
 is_game: is this program a game
 """
-
 
 class Program:
 

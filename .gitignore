@@ -13,3 +13,4 @@ dist/
 *.pkg
 *.ipynb
 !requirements.txt
+test.py

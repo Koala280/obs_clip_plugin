@@ -7,6 +7,8 @@ import helpers
 from threading import Thread
 import json
 from win32gui import GetForegroundWindow, GetClassName, GetWindowText
+import subprocess
+import os
 
 videos_path: str = str(Path.home()) + "\Videos\\"
 clip_path: str = videos_path + "Clips\\"
@@ -14,6 +16,7 @@ enabled: bool = True
 debug: bool = helpers.debug
 game_capture_source_name_video: str = "Game Capture"
 game_capture_source_name_audio: str = "Game Capture Audio"
+script_path: str = "C:/obs/"
 
 MISSING_FOLDER_NAME = "Unsorted"
 
@@ -115,32 +118,17 @@ def cb_get_data(props, prop) -> None:
 def cb_save_replay(props, prop) -> None:
     helpers.log("cb_save_replay")
     save_replay()
+    
+def cb_open_programs(props, prop) -> None:
+    helpers.log("cb_open_programs")
+    os.path.join(script_path,"programs.csv")
+    subprocess.run(['open', script_path + "programs.csv"])
 
 def get_active_window_info():
-    return f"{GetWindowText(GetForegroundWindow())}:{GetClassName(GetForegroundWindow())}:{helpers.get_active_process()}"
+    return f"{GetWindowText(GetForegroundWindow()).replace(':', '#3A')}:{GetClassName(GetForegroundWindow())}:{helpers.get_active_process()}"
      
 def test():
     sleep(3)
-    for source in obs.obs_enum_sources():
-        source_name = obs.obs_source_get_name(source)
-        
-        if source_name == game_capture_source_name_video:
-            source_settings_video = obs.obs_source_get_settings(source)
-            source_settings_readable_video = json.loads(obs.obs_data_get_json(source_settings_video))
-        if source_name == game_capture_source_name_audio:
-            source_settings_audio = obs.obs_source_get_settings(source)
-    print(source_settings_readable_video)
-    update_game_capture_audio_source()
-    for source in obs.obs_enum_sources():
-        source_name = obs.obs_source_get_name(source)
-        
-        if source_name == game_capture_source_name_video:
-            source_settings_video = obs.obs_source_get_settings(source)
-            source_settings_readable_video = json.loads(obs.obs_data_get_json(source_settings_video))
-        if source_name == game_capture_source_name_audio:
-            source_settings_audio = obs.obs_source_get_settings(source)
-    print(source_settings_readable_video)
-
 
 
 def cb_test(props, prop) -> None:
@@ -148,21 +136,23 @@ def cb_test(props, prop) -> None:
     test()
 
 def update_game_capture_audio_source() -> None:
-    for source in obs.obs_enum_sources():
-        source_name = obs.obs_source_get_name(source)
-        
-        if source_name == game_capture_source_name_video:
-            source_settings_video = obs.obs_source_get_settings(source)
-            #source_settings_readable_video = json.loads(obs.obs_data_get_json(source_settings_video))
-        if source_name == game_capture_source_name_audio:
-            source_settings_audio = obs.obs_source_get_settings(source)
-    
-    #obs.obs_data_set_string(source_settings_audio, "window", source_settings_readable_video["window"])
+    source_video = obs.obs_get_source_by_name(game_capture_source_name_video)
+    source_audio = obs.obs_get_source_by_name(game_capture_source_name_audio)
+
+    source_settings_video = obs.obs_source_get_settings(source_video)
+    source_settings_audio = obs.obs_source_get_settings(source_audio)
+
     obs.obs_data_set_string(source_settings_video, "window", f"{get_active_window_info()}")
     obs.obs_data_set_string(source_settings_audio, "window", f"{get_active_window_info()}")
     
-    obs.obs_source_update(source, source_settings_video)
-    obs.obs_source_update(source, source_settings_audio)
+    obs.obs_source_update(source_video, source_settings_video)
+    obs.obs_source_update(source_audio, source_settings_audio)
+    
+    obs.obs_source_release(source_video)
+    obs.obs_source_release(source_audio)
+
+    obs.obs_data_release(source_settings_video)
+    obs.obs_data_release(source_settings_audio)
 
 
 def capture_sound_of_game() -> None:
@@ -175,7 +165,6 @@ def capture_sound_of_game() -> None:
         if (active_game == None) and (active_program.is_game):
             active_game = active_program
             # hotkey capture video game capture
-            sleep(5)
             update_game_capture_audio_source()
         elif (active_game != None) and (not helpers.process_active(active_game.process)):
             active_game = None
@@ -185,7 +174,8 @@ def capture_sound_of_game() -> None:
 def script_load(settings) -> None:
     helpers.log("script_load()")
     h1.htk_copy = Hotkey(cb_hk_save_replay, settings, "hk_clip", "Clip Replay Buffer and sort into folder")
-    Thread(target=capture_sound_of_game)
+    t1 = Thread(target=capture_sound_of_game)
+    t1.start()
 
 # API
 def script_save(settings) -> None:
@@ -200,7 +190,7 @@ def script_description() -> str: return "OBS Clipping Script"
 def script_defaults(settings) -> None:
     helpers.log("script_defaults()")
     
-    global enabled, debug, clip_path, game_capture_source_name_video, game_capture_source_name_audio
+    global enabled, debug, clip_path, script_path, game_capture_source_name_video, game_capture_source_name_audio
 
     obs.obs_data_set_default_bool(settings, "enabled", enabled)
     obs.obs_data_set_default_bool(settings, "debug", debug)
@@ -228,7 +218,7 @@ Debug: {obs.obs_data_get_bool(settings, 'debug')}
 def script_update(settings) -> None:
     helpers.log("script_update()")
 
-    global enabled, debug, clip_path, game_capture_source_name_video, game_capture_source_name_audio
+    global enabled, debug, clip_path, script_path, game_capture_source_name_video, game_capture_source_name_audio
 
     if debug and not obs.obs_data_get_bool(settings, "debug"): helpers.log("Debug stop")
     elif not debug and obs.obs_data_get_bool(settings, "debug"): helpers.log("Debug start")
@@ -236,6 +226,7 @@ def script_update(settings) -> None:
     debug = obs.obs_data_get_bool(settings, "debug")
     enabled = obs.obs_data_get_bool(settings, "enabled")
     clip_path = obs.obs_data_get_string(settings, "clip_path") + "\\"
+    script_path = obs.obs_data_get_string(settings, "script_path") + "\\"
     game_capture_source_name_video = obs.obs_data_get_string(settings, "game_capture_source_name_video")
     game_capture_source_name_audio = obs.obs_data_get_string(settings, "game_capture_source_name_audio")
 
@@ -244,18 +235,20 @@ def script_update(settings) -> None:
 # Script view under the description
 def script_properties():
     helpers.log("script_properties()")
-    global clip_path
+    global clip_path, script_path
     props = obs.obs_properties_create()
     obs.obs_properties_add_bool(props, "enabled", "Enabled")
     obs.obs_properties_add_bool(props, "debug", "Debug")
     obs.obs_properties_add_button(props, "btn_get_data", "Refresh Data", cb_get_data)
     obs.obs_properties_add_button(props, "btn_save_replay", "Save Replay", cb_save_replay)
+    obs.obs_properties_add_button(props, "btn_open_programs", "Open Programs CSV", cb_open_programs)
     obs.obs_properties_add_path(props, "clip_path", "Clips Path", obs.OBS_PATH_DIRECTORY, "", clip_path)
+    obs.obs_properties_add_path(props, "script_path", "Script Path", obs.OBS_PATH_DIRECTORY, "", script_path)
     obs.obs_properties_add_text(props, "game_capture_source_name_video", "Game Capture Source Name", obs.OBS_TEXT_DEFAULT)
     obs.obs_properties_add_text(props, "game_capture_source_name_audio", "Game Capture Audio Source Name", obs.OBS_TEXT_DEFAULT)
 
 
-    obs.obs_properties_add_button(props, "btn_cb_test", "Test", cb_test)
+    #obs.obs_properties_add_button(props, "btn_cb_test", "Test", cb_test)
     #obs.obs_properties_add_button(props, "btn_test", "Test", cb_test)
     #obs.obs_properties_add_list(props, "programs", "Programs", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
     #obs.obs_properties_add_list(props, "folder", "Folder", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)

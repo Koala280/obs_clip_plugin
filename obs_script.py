@@ -18,7 +18,6 @@ EVENT_PROGRAMS_UPDATED = "programs_updated"
 EVENT_ACTIVE_PROGRAM_UPDATED = "active_program_updated"
 EVENT_ACTIVE_GAME_UPDATED = "active_game_updated"
 
-
 def stop_obs() -> None:
     helpers.log("stop_obs()")
     # wait till game is closed then stop obs
@@ -80,7 +79,10 @@ def handle_programs_updated_event():
 
 
 def handle_active_game_updated_event():
-    helpers.set_active_game_folder_name(active_game.folder)
+    if active_game != None:
+        helpers.set_active_game_folder_name(active_game.folder)
+    else:
+        helpers.set_active_game_folder_name(None)
 
 
 def main():
