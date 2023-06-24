@@ -64,7 +64,7 @@ def get_process(name: str) -> list:
     return process
 
 def get_active_process():
-    log("get_active_process()")
+    # log("get_active_process()") spam
     try:
         active_process = Process(GetWindowThreadProcessId(
             GetForegroundWindow())[-1]).name()
